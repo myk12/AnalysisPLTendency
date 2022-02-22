@@ -1,0 +1,5 @@
+//the configured options and settings for proj
+#define PROJECT_VERSION_MAJOR  @GoAnalysis_VERSION_MAJOR@
+#define PROJECT_VERSION_MINOR  @GoAnalysis_VERSION_MINOR@
+
+#cmakedefine USE_CRAWL

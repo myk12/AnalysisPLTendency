@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/GoAnalysis.dir/main.cpp.o  -o GoAnalysis  crawl/libcrawl.a 

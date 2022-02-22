@@ -1,0 +1,2 @@
+/usr/bin/ar qc libcrawl.a  CMakeFiles/crawl.dir/crawl.cpp.o
+/usr/bin/ranlib libcrawl.a
