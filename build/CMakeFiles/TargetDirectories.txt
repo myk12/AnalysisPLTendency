@@ -1,6 +1,0 @@
-/home/ma/AnalysisPLTendency/build/CMakeFiles/rebuild_cache.dir
-/home/ma/AnalysisPLTendency/build/CMakeFiles/edit_cache.dir
-/home/ma/AnalysisPLTendency/build/CMakeFiles/GoAnalysis.dir
-/home/ma/AnalysisPLTendency/build/crawl/CMakeFiles/rebuild_cache.dir
-/home/ma/AnalysisPLTendency/build/crawl/CMakeFiles/edit_cache.dir
-/home/ma/AnalysisPLTendency/build/crawl/CMakeFiles/crawl.dir
