@@ -2,18 +2,18 @@
 #define __CRAWL_H_
 
 #include <iostream>
+#include <vector>
+#include <string>
 using namespace std;
 
-#define CRUL_GITHUB_API_HEAD ("curl -H \"Accept: application/vnd.github.v3+json\" ")
 
 class crawler {
+private:
+	int cycle;
 public:
+	crawler(int cycle);
 	int crawling(const char *cmd, char *buffer, int bufflen);
-
-	int searchYears(string query, 
-			int items,
-			char *buffer,
-			int bufflen);
+	int searchYears(string query, vector<string>, string &res);
 };	
 
 #endif

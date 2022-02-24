@@ -3,7 +3,10 @@
 #include <string>
 #include <thread>
 #include <fstream>
+#include <chrono>
 using namespace std;
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 #include <stdlib.h>
 #include <assert.h>
@@ -13,13 +16,14 @@ using namespace std;
 #include "crawl.h"
 #include "utils.h"
 
-#define MAX_BUFFER_SIZE (1024*1024)
-#define REPO_QUANTITY_PER_YEAR	(1000)
+#define MAX_BUFFER_SIZE		 (1024*1024)
 #define REPO_STARS_LIMIT	("100")
+#define SAMPLE_QUANTITY 	(1000)
 
+#define GITHUB_SEARCH_CYCLE (7)
 
-void randomSerachReposForYears(vector<string> years);
-void testfunc();
+void randomSerachReposForYears(vector<string> years, vector<string> keys);
+vector<string> getMonthsOfYear(string y);
 
 int main(int argc, char **argv) {
 	cout<<"This is a project to analysis Go language tendency"<<endl;
@@ -27,21 +31,13 @@ int main(int argc, char **argv) {
 					"2013", "2014", "2015", "2016",
 					"2017", "2018", "2019", "2020", 
 					"2021"};
+	vector<string> searchKeys = {"id", "html_url", "language"};
 
-	cout<<"is here"<<endl;
-	thread tSearchYear(randomSerachReposForYears, searchYears);
+	thread tSearchYear(randomSerachReposForYears, searchYears, searchKeys);
 
 	tSearchYear.join();
 	return 0;
 }
-
-void testfunc(){
-	cout<<"================== randomSerachReposForYears =================="<<endl;
-	char buff[MAX_BUFFER_SIZE] = {0};
-	crawler mycrawler;
-	cout<<"hello world"<<endl;
-}
-
 
 /*
  * function:	randomSerachReposForYears
@@ -50,35 +46,58 @@ void testfunc(){
  * brief:	this function can search Github repositories which created from
  *		YEAR_START to YEAR_END and save the result to data directory
  */
-void randomSerachReposForYears(vector<string> years){
-	cout<<"================== randomSerachReposForYears =================="<<endl;
-	char buff[MAX_BUFFER_SIZE] = {0};
+void randomSerachReposForYears(vector<string> years, vector<string> keys){
 	int n = years.size();
-	crawler mycrawler;
+	crawler mycrawler(GITHUB_SEARCH_CYCLE);
 
 	// create data directory in current path
 	mkdir("data", S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
 	
 	for (auto y:years) {
-		cout<<"process year:"<<y<<endl;
-		ofstream fd;
 		string filename, query;
-		int items = 0;
-
+		vector<string> months;
+		ofstream fd;
+		
+		// create and open file to save data
 		filename = "./data/" + y + ".dat";
 		fd.open(filename);
 
-		//query = UrlEncode("?q=created:" + y + "-01-01.." + y + "-12-31  stars:>=" + REPO_STARS_LIMIT);
-		query = "?q=created:" + y + "-01-01.." + y + "-12-31"; //%20stars:>=" + REPO_STARS_LIMIT;
-		cout<<"query: "<<query<<endl;
-		
-		memset(buff, 0, sizeof(buff));
-		mycrawler.searchYears(query, REPO_QUANTITY_PER_YEAR, buff, MAX_BUFFER_SIZE);
-		
-		fd<<buff<<endl;
-		
+		// gen every month query
+		months = getMonthsOfYear(y);
+		for (auto mon:months) {
+			string ans;
+			query = "?q=created:"+mon;
+			query += "&page=16&per_page=100\"";
+
+			while (mycrawler.searchYears(query, keys, ans) <= 0);
+
+			fd<<ans<<endl;
+		}
+
 		fd.close();
 	}
-	
 }
-		
+
+/*
+ * function:	getMonthsOfYear
+ * author:		mayuke
+ * 
+ * brief:		this function return 12 months of input year
+ *
+ */
+vector<string> getMonthsOfYear(string y) {
+	vector<string> ans;
+	ans.emplace_back(y + "-01-01.." + y + "-02-01");
+	ans.emplace_back(y + "-02-02.." + y + "-03-01");
+	ans.emplace_back(y + "-03-02.." + y + "-04-01");
+	ans.emplace_back(y + "-04-02.." + y + "-05-01");
+	ans.emplace_back(y + "-05-02.." + y + "-06-01");
+	ans.emplace_back(y + "-06-02.." + y + "-07-01");
+	ans.emplace_back(y + "-07-02.." + y + "-08-01");
+	ans.emplace_back(y + "-08-02.." + y + "-09-01");
+	ans.emplace_back(y + "-09-02.." + y + "-10-01");
+	ans.emplace_back(y + "-10-02.." + y + "-11-01");
+	ans.emplace_back(y + "-11-02.." + y + "-12-01");
+	ans.emplace_back(y + "-12-02.." + y + "-12-31");
+	return ans;
+}
