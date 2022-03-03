@@ -20,14 +20,16 @@ using json = nlohmann::json;
 #define REPO_STARS_LIMIT		("100")
 #define SAMPLE_QUANTITY 		(1000)
 
-#define SEARCH_THREAD_NUM 		(2)
+#define SEARCH_THREAD_NUM 		(3)
 #define SEARCH_CYCLE 			(SEARCH_THREAD_NUM * 7)
 
 #define TEST_TH1
-#define TEST_TH1
+#define TEST_TH2
+#define TEST_TH3
 
 void randomSerachReposForYears(vector<string> years, vector<string> keys);
 void specifySearchReposForUsers(vector<string> keys, vector<string> infos);
+void randomSearchReposForGolang(vector<string> years, vector<string> keys);
 vector<string> getMonthsOfYear(string y);
 
 int main(int argc, char **argv) {
@@ -46,11 +48,15 @@ int main(int argc, char **argv) {
 	vector<string> searchUser	= { "login" };
 	vector<string> UserRepoInfo = { "id", "full_name", "language"};
 
+	vector<string> searchGoRepo = { "id", "language", "created_at", "topics", "description", "size"};
 #ifdef TEST_TH1
 	thread tSearchYear(randomSerachReposForYears, searchYears, searchKeys);
 #endif
 #ifdef TEST_TH2
 	thread tSearchUser(specifySearchReposForUsers, searchUser, UserRepoInfo);
+#endif
+#ifdef TEST_TH3
+	thread tSearchGoRepo(randomSearchReposForGolang, searchYears, searchGoRepo);
 #endif
 
 #ifdef TEST_TH1
@@ -59,8 +65,49 @@ int main(int argc, char **argv) {
 #ifdef TEST_TH2
 	tSearchUser.join();
 #endif
+#ifdef TEST_TH3
+	tSearchGoRepo.join();
+#endif
 	return 0;
 }
+
+void randomSearchReposForGolang(vector<string> years, vector<string> keys) {
+	string dataDir = "data/go_repos/";
+	crawler mycrawler(SEARCH_CYCLE);
+
+	// create daat directory in current path
+	system("rm -rf data/go_repos");
+	mkdir(dataDir.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+	
+	// search repos of Go lang
+	for (auto y:years) {
+		vector<string>	months;
+		string 			filename;
+		ofstream 		fd;
+		
+		// create and open file to save data
+		filename = dataDir + y + ".dat";
+		fd.open(filename);
+		assert(fd);
+
+		// gen every month query
+		months = getMonthsOfYear(y);
+		for (auto mon:months) {
+			string ans;
+			string query;
+			query += CURL_SEARCH_REPO;
+			query += "?q=created:"+ mon + "%20language:Go";
+			query += "&page=8&per_page=100\"";
+
+			while (mycrawler.search(query, keys, ans) < 0);
+
+			fd<<ans<<endl;
+		}
+
+		fd.close();
+	}
+}
+	
 
 /*
  * function:	specifySearchReposForUsers
@@ -116,7 +163,6 @@ void specifySearchReposForUsers(vector<string> keys, vector<string> infos){
  *		YEAR_START to YEAR_END and save the result to data directory
  */
 void randomSerachReposForYears(vector<string> years, vector<string> keys){
-	int 	n 		= years.size();
 	string	dataDir = "data/year_repos/";
 	crawler mycrawler(SEARCH_CYCLE);
 
