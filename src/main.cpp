@@ -56,6 +56,7 @@ int main(int argc, char **argv) {
 	thread tSearchUser(specifySearchReposForUsers, searchUser, UserRepoInfo);
 #endif
 #ifdef TEST_TH3
+	vector<string> searchGoYears(searchYears.begin() + 6, searchYears.end());
 	thread tSearchGoRepo(randomSearchReposForGolang, searchYears, searchGoRepo);
 #endif
 
