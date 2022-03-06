@@ -35,6 +35,14 @@ def readFromFile(filename):
 
 	return lines
 
+def generateWordCloud(txtfile):
+	text = open(txtfile).read()
+	wordcloud = wcd(background_color="white").generate(text)
+	plt.imshow(wordcloud, interpolation='bilinear')
+	plt.axis("off")
+	plt.savefig(outputdir + "all"  + ".png", dpi=800)
+	plt.show()
+
 def analysisGoProj(path, files):
 	'''
 	this function analysis the data of Go project from Github
@@ -43,7 +51,7 @@ def analysisGoProj(path, files):
 	
 	create_time = []
 	proj_size = []
-	dfall = pd.DataFrame()
+	dfall = pd.DataFrame([])
 
 	#each file represents one year data
 	for fl in files:
@@ -63,16 +71,9 @@ def analysisGoProj(path, files):
 			print("empty file")
 		
 		dfall = pd.concat([dfall, df], sort = False)
-
-
-			
+	
 		#generate wordcloud
-		text = open(filename).read()
-		wordcloud = wcd(background_color="white").generate(text)
-		plt.imshow(wordcloud, interpolation='bilinear')
-		plt.axis("off")
-		plt.savefig(outputdir + fl + ".png", dpi=800)
-		plt.show()
+		#generateWordCloud(filename)
 
 	ct = dfall["created_at"].apply(timestr2timestamp)
 	size = dfall["size"].apply(logValue)
@@ -81,6 +82,9 @@ def analysisGoProj(path, files):
 	plt.savefig(outputdir + "scatter.png", dpi=800)
 	plt.show()
 
+	descpt = dfall["description"].values
+	np.savetxt("wordcloudall.txt", des[des != None], fmt = "%s", delimiter = ' ')
+	generateWordCloud("wordcloudall.txt")
 
 def analysisTimeline(path, files):
 	'''
@@ -130,11 +134,6 @@ def main():
 	analysisGoProj(godataDir, godatafiles)
 
 if __name__ == "__main__":
-	#clean 
-	os.system("rm -rf result & rm -rf data")
-	
-	#copy data from build dir
-	os.system("cp -r ../build/data ./")
 	#mkdir result
 	os.system("mkdir -p result")
 	main()
