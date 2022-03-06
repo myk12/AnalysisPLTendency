@@ -20,12 +20,12 @@ using json = nlohmann::json;
 #define REPO_STARS_LIMIT		("100")
 #define SAMPLE_QUANTITY 		(1000)
 
-#define SEARCH_THREAD_NUM 		(3)
+#define SEARCH_THREAD_NUM 		(1)
 #define SEARCH_CYCLE 			(SEARCH_THREAD_NUM * 7)
 
 #define TEST_TH1
-#define TEST_TH2
-#define TEST_TH3
+//#define TEST_TH2
+//#define TEST_TH3
 
 void randomSerachReposForYears(vector<string> years, vector<string> keys);
 void specifySearchReposForUsers(vector<string> keys, vector<string> infos);
@@ -43,12 +43,12 @@ int main(int argc, char **argv) {
 									"2017", "2018", "2019", "2020",
 									"2021" };
 
-	vector<string> searchKeys 	= { "id", "html_url", "language" };
+	vector<string> searchKeys 	= { "id", "html_url", "language" , "stargazers_count", "watchers_count", "forks_count"};
 
 	vector<string> searchUser	= { "login" };
 	vector<string> UserRepoInfo = { "id", "full_name", "language"};
 
-	vector<string> searchGoRepo = { "id", "language", "created_at", "topics", "description", "size"};
+	vector<string> searchGoRepo = { "id", "full_name", "language", "created_at", "topics", "description", "size"};
 #ifdef TEST_TH1
 	thread tSearchYear(randomSerachReposForYears, searchYears, searchKeys);
 #endif
@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
 	thread tSearchUser(specifySearchReposForUsers, searchUser, UserRepoInfo);
 #endif
 #ifdef TEST_TH3
-	vector<string> searchGoYears(searchYears.begin() + 6, searchYears.end());
-	thread tSearchGoRepo(randomSearchReposForGolang, searchYears, searchGoRepo);
+	vector<string> searchGoYears(searchYears.begin() + 8, searchYears.end());
+	thread tSearchGoRepo(randomSearchReposForGolang, searchGoYears, searchGoRepo);
 #endif
 
 #ifdef TEST_TH1
