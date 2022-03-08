@@ -13,10 +13,10 @@ yeardata = "year_repos/"
 godata = "go_repos/"
 outputdir = "./result/"
 
-def logValue(val):
+def logValue(val, base=2):
 	if (val <= 0):
 		return 0
-	return math.log(val, 1.2) 
+	return math.log(val, base) 
 
 def timestr2timestamp(timestr):
 	'''
@@ -29,18 +29,23 @@ def timestr2timestamp(timestr):
 	
 
 def readFromFile(filename):
+	lines = []
+	if (not filename):
+		return lines
+	
+	print("read files : %s" %filename)
 	fd = open(filename, "r")
 	lines = fd.readlines()
 	fd.close()
 
 	return lines
 
-def generateWordCloud(txtfile):
+def generateWordCloud(txtfile, path="/tmp/", name="wordcloud.png"):
 	text = open(txtfile).read()
 	wordcloud = wcd(background_color="white").generate(text)
 	plt.imshow(wordcloud, interpolation='bilinear')
 	plt.axis("off")
-	plt.savefig(outputdir + "all"  + ".png", dpi=800)
+	plt.savefig(outputdir + name, dpi=800)
 	plt.show()
 
 def analysisGoProj(path, files):
@@ -51,7 +56,7 @@ def analysisGoProj(path, files):
 	
 	create_time = []
 	proj_size = []
-	dfall = pd.DataFrame([])
+	dfall = pd.DataFrame()
 
 	#each file represents one year data
 	for fl in files:
@@ -71,7 +76,7 @@ def analysisGoProj(path, files):
 			print("empty file")
 		
 		dfall = pd.concat([dfall, df], sort = False)
-	
+
 		#generate wordcloud
 		#generateWordCloud(filename)
 
@@ -81,59 +86,101 @@ def analysisGoProj(path, files):
 	result.plot.scatter(x="created_at", y="size", color="DarkGreen")
 	plt.savefig(outputdir + "scatter.png", dpi=800)
 	plt.show()
+	
+	#generate wordcloud
+	descpt = dfall["desctiption"].values
+	np.savetxt("/tmp/wordcloudall.txt", des[des != None], fmt = "%s", delimiter = " ")
+	generateWordCloud("/tmp/wordcloudall.txt", outputdir, "wordcloudall.png")
 
-	descpt = dfall["description"].values
-	np.savetxt("wordcloudall.txt", des[des != None], fmt = "%s", delimiter = ' ')
-	generateWordCloud("wordcloudall.txt")
-
-def analysisTimeline(path, files):
+def analysisTimeline(path, files, lang):
 	'''
 	this function analysis the data of number of Go project every year form 2009 to	2021
 	and generate a bar char to vasulize the result
 	'''
-	year = []
-	number = []
+	
+	#sort by year
 	files.sort()
+	columns_name = ["repos_count", "stargazers_count", "watchers_count", "forks_count"]
+
+	year_repos_list = []
+	index_list = []
 
 	for fl in files:
-		print("read files : %s" %fl)
+		#each year represents a year
+		dffile = pd.DataFrame()
+
+		#read file
 		filecontent = readFromFile(path + fl)
-		total = 0
 
 		# count the total number of Go project
 		for content in filecontent:
 			#each line represent one month in a year
-			df = pd.DataFrame(json.loads(content))
 			try:
-				cnt = df['language'].value_counts().loc['Go']
+				dfline = pd.DataFrame(json.loads(content))
+				dfline = dfline.loc[dfline["language"] == lang]
 			except KeyError:
-				cnt = 0
-			total += cnt
-			print("%s : %d" %(fl, total))
+				dfline = pd.DataFrame()
+			
+			dffile = pd.concat([dffile, dfline])
+		
+		year_repos_list.append([dffile.shape[0],\
+								dffile[columns_name[1]].sum(),\
+								dffile[columns_name[2]].sum(),\
+								dffile[columns_name[3]].sum()])
 
-		year.append((int)(fl.split('.')[0]))
-		number.append(total)
+		index_list.append(fl.split('.')[0])
 
-	plt.figure(figsize=(12, 8), dpi=80)
-	plt.bar(year, number, tick_label=year, label="repos")
-	plt.xlabel("year")
-	plt.ylabel("Go repos per thousand")
-	plt.title("Golang trends")
-	plt.savefig(outputdir + "year_trends.png")
+	return pd.DataFrame(year_repos_list, columns = columns_name, index = index_list)
+
+def reposChangesForYears(path, files):
+	dataDict = {}
+	year_list = []
+	langList = ["Go", "C++", "Java", "Python"]
+	
+	#get year list
+	files.sort()
+	for fl in files:
+		year_list.append(fl.split('.')[0])
+
+	fig = plt.figure(figsize=(8, 6))
+
+	for lang in langList:
+		dflang = analysisTimeline(path, files, lang)
+		dataDict[lang] = dflang
+		print("=================================== %s ======================================" %lang)
+		print(dataDict[lang])
+		plt.plot(year_list, dflang['repos_count'], label=lang)
+
+	plt.xlabel("years")
+	plt.ylabel("repos_count")
+	plt.legend()
+	plt.savefig(outputdir + "yearsChange.png", dpi=800)
+	plt.show()
+		
+
+	for lang in langList:
+		dflang = analysisTimeline(path, files, lang)
+		dflang['hot'] = dflang["repos_count"]*(dflang["stargazers_count"].apply(logValue, 2)\
+											+ dflang["watchers_count"].apply(logValue, 2)\
+											+ dflang["forks_count"].apply(logValue, 2))
+		plt.plot(year_list, dflang['hot'], label=lang)
+
+	plt.xlabel("years")
+	plt.ylabel("repos_count")
+	plt.legend()
+	plt.savefig(outputdir + "yearsChange_modifed.png", dpi=800)
 	plt.show()
 
 def main():
 	#work 1
 	yeardataDir = datadir + yeardata
 	yeardatafiles = os.listdir(yeardataDir)
-	analysisTimeline(yeardataDir, yeardatafiles)
+	reposChangesForYears(yeardataDir, yeardatafiles)
 
 	#work 2
 	godataDir = datadir + godata
 	godatafiles = os.listdir(godataDir)
-	analysisGoProj(godataDir, godatafiles)
+	#analysisGoProj(godataDir, godatafiles)
 
 if __name__ == "__main__":
-	#mkdir result
-	os.system("mkdir -p result")
 	main()
