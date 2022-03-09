@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import json
 import time
 import math
+import commitsCalMap
 from datetime import datetime
 from wordcloud import WordCloud as wcd
 
@@ -78,7 +79,7 @@ def analysisGoProj(path, files):
 		dfall = pd.concat([dfall, df], sort = False)
 
 		#generate wordcloud
-		#generateWordCloud(filename)
+		generateWordCloud(filename, outputdir, fl + ".png")
 
 	ct = dfall["created_at"].apply(timestr2timestamp)
 	size = dfall["size"].apply(logValue)
@@ -88,7 +89,7 @@ def analysisGoProj(path, files):
 	plt.show()
 	
 	#generate wordcloud
-	descpt = dfall["desctiption"].values
+	descpt = dfall["description"].values
 	np.savetxt("/tmp/wordcloudall.txt", des[des != None], fmt = "%s", delimiter = " ")
 	generateWordCloud("/tmp/wordcloudall.txt", outputdir, "wordcloudall.png")
 
@@ -158,11 +159,14 @@ def reposChangesForYears(path, files):
 	plt.show()
 		
 
+	fig = plt.figure(figsize=(8, 6))
 	for lang in langList:
 		dflang = analysisTimeline(path, files, lang)
-		dflang['hot'] = dflang["repos_count"]*(dflang["stargazers_count"].apply(logValue, 2)\
+		dflang['hot'] = round(dflang["repos_count"]*(dflang["stargazers_count"].apply(logValue, 2)\
 											+ dflang["watchers_count"].apply(logValue, 2)\
-											+ dflang["forks_count"].apply(logValue, 2))
+											+ dflang["forks_count"].apply(logValue, 2)), 2)
+		print("=================================== %s ======================================" %lang)
+		print(dflang)
 		plt.plot(year_list, dflang['hot'], label=lang)
 
 	plt.xlabel("years")
@@ -176,11 +180,15 @@ def main():
 	yeardataDir = datadir + yeardata
 	yeardatafiles = os.listdir(yeardataDir)
 	reposChangesForYears(yeardataDir, yeardatafiles)
-
+	
 	#work 2
+	commitsCalMap.main()
+	
+
+	#work 3
 	godataDir = datadir + godata
 	godatafiles = os.listdir(godataDir)
-	#analysisGoProj(godataDir, godatafiles)
+	analysisGoProj(godataDir, godatafiles)
 
 if __name__ == "__main__":
 	main()
